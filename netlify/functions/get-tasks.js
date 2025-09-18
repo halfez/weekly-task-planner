@@ -1,7 +1,7 @@
 const { getStore } = require("@netlify/blobs");
 
 exports.handler = async (event, context) => {
-  if (event.httpMethod !== 'POST') {
+  if (event.httpMethod !== 'GET') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
@@ -15,20 +15,30 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const data = JSON.parse(event.body);
     const store = getStore("tasks");
     
-    // Use the authenticated user ID as the key for storage
-    await store.set(userId, JSON.stringify(data));
+    // Use the authenticated user ID as the key for retrieval
+    const data = await store.get(userId);
     
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ success: true, userId: userId })
-    };
+    if (data) {
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: data
+      };
+    } else {
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ tasks: [], weeklyPlans: [], completedTasks: [] })
+      };
+    }
   } catch (error) {
     return {
       statusCode: 500,
