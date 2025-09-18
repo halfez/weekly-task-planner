@@ -1,15 +1,25 @@
-exports.handler = async (event) => {
-  const { getStore } = await import("@netlify/blobs");
-  
-  if (event.httpMethod !== 'GET') {
+const { getStore } = require("@netlify/blobs");
+
+exports.handler = async (event, context) => {
+  if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
+  // Check for authenticated user from Netlify Identity
+  const userId = context.clientContext && context.clientContext.user ? context.clientContext.user.sub : null;
+  if (!userId) {
+    return {
+      statusCode: 401,
+      body: JSON.stringify({ error: 'Authentication required' })
+    };
+  }
+
   try {
+    const data = JSON.parse(event.body);
     const store = getStore("tasks");
-    const userId = event.queryStringParameters?.userId || 'default-user';
     
-    const data = await store.get(userId);
+    // Use the authenticated user ID as the key for storage
+    await store.set(userId, JSON.stringify(data));
     
     return {
       statusCode: 200,
@@ -17,7 +27,7 @@ exports.handler = async (event) => {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
       },
-      body: data || JSON.stringify({ tasks: [], weeklyPlans: [], completedTasks: [] })
+      body: JSON.stringify({ success: true, userId: userId })
     };
   } catch (error) {
     return {
