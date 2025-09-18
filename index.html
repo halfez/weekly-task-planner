@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weekly Task Planner</title>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <style>
         * {
             margin: 0;
@@ -420,6 +421,9 @@
 </head>
 <body>
     <div class="container">
+        <!-- Identity Widget container -->
+        <div data-netlify-identity-menu></div>
+        
         <!-- Statistics Bar -->
         <div class="stats-bar">
             <div class="stat-item">
@@ -523,27 +527,35 @@
         let selectedCategory = 'personal';
         let selectedPriority = 'medium';
 
-        // User ID for cloud sync
-        let userId = localStorage.getItem('userId');
-        if (!userId) {
-            userId = 'user-' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('userId', userId);
-        }
+        // Netlify Identity
+        let userId = null;
+        let identity = netlifyIdentity;
 
-        // Cloud sync status
-        let cloudSyncEnabled = true;
-        let syncInProgress = false;
+        identity.on('init', user => {
+            if (user) {
+                userId = user.id;
+                console.log('User is logged in:', user);
+                loadFromCloud(); // Try to load from cloud when initialized
+            } else {
+                userId = null;
+                console.log('User is not logged in');
+                // You might want to handle this state differently, e.g., only use local storage.
+            }
+        });
 
-        // Initialize
-        function init() {
-            loadData();
-            // Set default selections
-            selectCategory('personal');
-            selectPriority('medium');
-            // Try to load from cloud
-            loadFromCloud();
-        }
+        identity.on('login', user => {
+            userId = user.id;
+            console.log('User logged in:', user);
+            loadFromCloud(); // Load from cloud after login
+        });
 
+        identity.on('logout', () => {
+            userId = null;
+            console.log('User logged out');
+            appData = { tasks: [], weeklyPlans: [], completedTasks: [] };
+            saveData(); // Clear local data and re-render
+        });
+        
         // Load data from localStorage
         function loadData() {
             try {
@@ -562,17 +574,14 @@
         function saveData() {
             localStorage.setItem('weeklyPlannerData', JSON.stringify(appData));
             updateStats();
-            // Save to cloud
-            if (cloudSyncEnabled && !syncInProgress) {
+            // Save to cloud if logged in
+            if (userId) {
                 saveToCloud();
             }
         }
 
         // Save to cloud
         async function saveToCloud() {
-            if (syncInProgress) return;
-            syncInProgress = true;
-            
             try {
                 const response = await fetch('/.netlify/functions/save-tasks', {
                     method: 'POST',
@@ -580,7 +589,7 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        userId: userId,
+                        // No need for userId here, it's handled by the function
                         ...appData,
                         lastUpdated: new Date().toISOString()
                     })
@@ -588,96 +597,64 @@
                 
                 if (response.ok) {
                     console.log('Saved to cloud');
-                    showSyncStatus('☁️ Synced', 'success');
+                    showNotification('Cloud sync successful!', 'success');
                 } else {
                     console.error('Failed to save to cloud');
-                    showSyncStatus('⚠️ Sync failed', 'error');
+                    showNotification('Cloud sync failed', 'error');
                 }
             } catch (error) {
                 console.error('Cloud save error:', error);
-                // Don't show error if it's just because we're running locally
-                if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-                    showSyncStatus('📵 Offline', 'error');
-                }
-            } finally {
-                syncInProgress = false;
+                showNotification('Connection error: Sync failed', 'error');
             }
         }
 
         // Load from cloud
         async function loadFromCloud() {
+            if (!userId) {
+                console.log('Not logged in, skipping cloud load.');
+                return;
+            }
+            
             try {
-                const response = await fetch(`/.netlify/functions/get-tasks?userId=${userId}`);
+                const response = await fetch(`/.netlify/functions/get-tasks`);
                 
                 if (response.ok) {
                     const cloudData = await response.json();
                     
-                    // Check if cloud data is newer than local data
-                    const localData = localStorage.getItem('weeklyPlannerData');
-                    const localTimestamp = localData ? JSON.parse(localData).lastUpdated : null;
-                    
-                    if (cloudData.lastUpdated && (!localTimestamp || cloudData.lastUpdated > localTimestamp)) {
-                        appData.tasks = cloudData.tasks || [];
-                        appData.weeklyPlans = cloudData.weeklyPlans || [];
-                        appData.completedTasks = cloudData.completedTasks || [];
+                    if (cloudData) {
+                        // Check if cloud data is newer than local data
+                        const localData = localStorage.getItem('weeklyPlannerData');
+                        const localTimestamp = localData ? JSON.parse(localData).lastUpdated : null;
                         
-                        // Save to local storage
-                        localStorage.setItem('weeklyPlannerData', JSON.stringify(appData));
-                        
-                        updateStats();
-                        renderTaskList();
-                        showSyncStatus('☁️ Loaded from cloud', 'success');
+                        if (cloudData.lastUpdated && (!localTimestamp || cloudData.lastUpdated > localTimestamp)) {
+                            appData.tasks = cloudData.tasks || [];
+                            appData.weeklyPlans = cloudData.weeklyPlans || [];
+                            appData.completedTasks = cloudData.completedTasks || [];
+                            
+                            // Save to local storage
+                            localStorage.setItem('weeklyPlannerData', JSON.stringify(appData));
+                            
+                            updateStats();
+                            renderTaskList();
+                            showNotification('Loaded from cloud!', 'success');
+                        }
                     }
                 }
             } catch (error) {
                 console.error('Cloud load error:', error);
-                // Only show message if we're on Netlify
-                if (window.location.hostname.includes('netlify')) {
-                    showSyncStatus('Using local data', 'info');
-                }
+                showNotification('Connection error: Could not load data', 'error');
             }
-        }
-
-        // Show sync status
-        function showSyncStatus(message, type) {
-            const existing = document.querySelector('.sync-status');
-            if (existing) existing.remove();
-            
-            const status = document.createElement('div');
-            status.className = 'sync-status';
-            status.textContent = message;
-            status.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                left: 20px;
-                padding: 10px 15px;
-                border-radius: 6px;
-                font-size: 12px;
-                font-weight: 500;
-                z-index: 1000;
-                animation: slideIn 0.3s ease;
-                background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
-                color: white;
-            `;
-            document.body.appendChild(status);
-            
-            setTimeout(() => {
-                status.remove();
-            }, 3000);
         }
 
         // Manual sync
         async function manualSync() {
+            if (!userId) {
+                showNotification('Please log in to sync!', 'info');
+                return;
+            }
             showNotification('Syncing...', 'info');
             await saveToCloud();
             await loadFromCloud();
-        }
-
-        // Update statistics
-        function updateStats() {
-            document.getElementById('total-tasks').textContent = appData.tasks.length;
-            document.getElementById('completed-tasks').textContent = appData.completedTasks.length;
-            document.getElementById('weekly-plans').textContent = appData.weeklyPlans.length;
         }
 
         // Show notification
@@ -690,6 +667,13 @@
             setTimeout(() => {
                 notification.remove();
             }, 3000);
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('total-tasks').textContent = appData.tasks.length;
+            document.getElementById('completed-tasks').textContent = appData.completedTasks.length;
+            document.getElementById('weekly-plans').textContent = appData.weeklyPlans.length;
         }
 
         // Category selection
@@ -932,7 +916,7 @@
         }
 
         // Initialize app when page loads
-        window.onload = init;
+        window.onload = loadData;
     </script>
 </body>
 </html>
