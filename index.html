@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weekly Task Planner</title>
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script type='text/javascript' src='https://private-us-east-1.manuscdn.com/Dcj6xpkb9PaivDx0-Am--tMPdOQcRqrgkH3YYlTYINAwgdx9pcHxTaKCjZnKMDDbGpno1IGtes9WW8FNQIoZsHI1LcMaEpIXt8VXgP58kByZZgTGiNuzFnDp6Q5HaCJOfCkfDHkCRwszA31709AQJSQTS3rWsE9zUP7UMbCcIwQ='></script><script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <style>
         * {
             margin: 0;
@@ -98,10 +98,10 @@
 
         /* Category and Priority Buttons */
         .button-group {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 10px;
             margin-bottom: 15px;
-            flex-wrap: wrap;
         }
 
         .toggle-btn {
@@ -125,12 +125,17 @@
         }
 
         /* Category colors */
-        .category-btn.active.work { background: #2196F3; }
-        .category-btn.active.personal { background: #4CAF50; }
-        .category-btn.active.health { background: #FF5722; }
-        .category-btn.active.learning { background: #9C27B0; }
-        .category-btn.active.shopping { background: #00BCD4; }
-        .category-btn.active.other { background: #607D8B; }
+        .category-btn.active.va { background: #FF6347; } /* Tomato */
+        .category-btn.active.navy { background: #4682B4; } /* SteelBlue */
+        .category-btn.active.dlemba { background: #32CD32; } /* LimeGreen */
+        .category-btn.active.family { background: #FFD700; color: #333; } /* Gold */
+        .category-btn.active.health { background: #FF4500; } /* OrangeRed */
+        .category-btn.active.finance { background: #2E8B57; } /* SeaGreen */
+        .category-btn.active.duplex { background: #DAA520; color: #333; } /* GoldenRod */
+        .category-btn.active.ai { background: #8A2BE2; } /* BlueViolet */
+        .category-btn.active.education { background: #00CED1; } /* DarkTurquoise */
+        .category-btn.active.futurelife { background: #9932CC; } /* DarkOrchid */
+        .category-btn.active.misc { background: #808080; } /* Gray */
 
         /* Priority colors */
         .priority-btn.active.high { background: #f44336; }
@@ -445,28 +450,36 @@
             <div class="card-title">
                 <span>📝</span> Quick Add Task
             </div>
-            <input type="text" 
+            <textarea 
                    class="task-input" 
                    id="task-input" 
-                   placeholder="Enter task description..."
-                   onkeypress="if(event.key==='Enter') addNewTask()">
+                   placeholder="Enter task descriptions (one per line)..."
+                   rows="5"></textarea>
             
             <div class="button-group">
-                <button class="toggle-btn category-btn" data-category="work" onclick="selectCategory('work')">Work</button>
-                <button class="toggle-btn category-btn" data-category="personal" onclick="selectCategory('personal')">Personal</button>
+                <button class="toggle-btn category-btn" data-category="va" onclick="selectCategory('va')">VA</button>
+                <button class="toggle-btn category-btn" data-category="navy" onclick="selectCategory('navy')">Navy</button>
+                <button class="toggle-btn category-btn" data-category="dlemba" onclick="selectCategory('dlemba')">DLEMBA</button>
+                <button class="toggle-btn category-btn" data-category="family" onclick="selectCategory('family')">Family</button>
                 <button class="toggle-btn category-btn" data-category="health" onclick="selectCategory('health')">Health</button>
-                <button class="toggle-btn category-btn" data-category="learning" onclick="selectCategory('learning')">Learning</button>
-                <button class="toggle-btn category-btn" data-category="shopping" onclick="selectCategory('shopping')">Shopping</button>
-                <button class="toggle-btn category-btn" data-category="other" onclick="selectCategory('other')">Other</button>
+                <button class="toggle-btn category-btn" data-category="finance" onclick="selectCategory('finance')">Finance</button>
+                <button class="toggle-btn category-btn" data-category="duplex" onclick="selectCategory('duplex')">Duplex</button>
+                <button class="toggle-btn category-btn" data-category="ai" onclick="selectCategory('ai')">AI</button>
+                <button class="toggle-btn category-btn" data-category="education" onclick="selectCategory('education')">Education</button>
+                <button class="toggle-btn category-btn" data-category="futurelife" onclick="selectCategory('futurelife')">FutureLife</button>
+                <button class="toggle-btn category-btn" data-category="misc" onclick="selectCategory('misc')">Misc</button>
             </div>
 
             <div class="button-group">
                 <button class="toggle-btn priority-btn high" data-priority="high" onclick="selectPriority('high')">High Priority</button>
-                <button class="toggle-btn priority-btn medium active" data-priority="medium" onclick="selectPriority('medium')">Medium Priority</button>
-                <button class="toggle-btn priority-btn low" data-priority="low" onclick="selectPriority('low')">Low Priority</button>
+                <button class="toggle-btn priority-btn medium" data-priority="medium" onclick="selectPriority("medium")">Medium Priority</button>
+                <button class="toggle-btn priority-btn low active" data-priority="low" onclick="selectPriority("low")">Low Priority</button>
             </div>
 
-            <button class="add-task-btn" onclick="addNewTask()">Add Task</button>
+            <button class="add-task-btn" onclick="addNewTask()">Add Task(s)</button>
+            <div style="margin-top: 10px; font-size: 14px; color: #666; text-align: center;">
+                💡 Tip: Enter multiple tasks, one per line, to add them all at once!
+            </div>
         </div>
 
         <!-- Action Buttons -->
@@ -524,8 +537,8 @@
         };
 
         // Selected options
-        let selectedCategory = 'personal';
-        let selectedPriority = 'medium';
+        let selectedCategory = 'misc';
+        let selectedPriority = 'low';
 
         // Netlify Identity
         let userId = null;
@@ -703,30 +716,36 @@
         // Add new task
         function addNewTask() {
             const input = document.getElementById('task-input');
-            const title = input.value.trim();
+            const titles = input.value.trim().split('\n');
 
-            if (!title) {
-                showNotification('Please enter a task description', 'error');
+            if (titles.length === 0 || (titles.length === 1 && titles[0] === '')) {
+                showNotification('Please enter at least one task description', 'error');
                 return;
             }
 
-            const task = {
-                id: Date.now().toString(),
-                title: title,
-                category: selectedCategory,
-                priority: selectedPriority,
-                duration: selectedPriority === 'high' ? 60 : selectedPriority === 'medium' ? 30 : 15,
-                status: 'pending',
-                createdAt: new Date().toISOString()
-            };
+            titles.forEach(title => {
+                if (title.trim() === '') return;
 
-            appData.tasks.push(task);
+                const task = {
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // improved unique ID
+                    title: title.trim(),
+                    category: selectedCategory,
+                    priority: selectedPriority,
+                    duration: selectedPriority === 'high' ? 60 : selectedPriority === 'medium' ? 30 : 15,
+                    status: 'pending',
+                    createdAt: new Date().toISOString()
+                };
+
+                appData.tasks.push(task);
+            });
+
             saveData();
             renderTaskList();
 
             // Reset form
             input.value = '';
-            showNotification('Task added successfully!', 'success');
+            const validTasks = titles.filter(title => title.trim() !== '').length;
+            showNotification(`${validTasks} task${validTasks === 1 ? '' : 's'} added successfully!`, 'success');
         }
 
         // Render task list
@@ -920,3 +939,19 @@
     </script>
 </body>
 </html>
+
+
+<style>
+.category-btn.active.va { background: #FF6347; } /* Tomato */
+.category-btn.active.navy { background: #4682B4; } /* SteelBlue */
+.category-btn.active.dlemba { background: #32CD32; } /* LimeGreen */
+.category-btn.active.family { background: #FFD700; } /* Gold */
+.category-btn.active.health { background: #FF4500; } /* OrangeRed */
+.category-btn.active.finance { background: #2E8B57; } /* SeaGreen */
+.category-btn.active.duplex { background: #DAA520; } /* GoldenRod */
+.category-btn.active.ai { background: #8A2BE2; } /* BlueViolet */
+.category-btn.active.education { background: #00CED1; } /* DarkTurquoise */
+.category-btn.active.futurelife { background: #9932CC; } /* DarkOrchid */
+.category-btn.active.misc { background: #808080; } /* Gray */
+</style>
+
