@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+e<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -533,7 +533,8 @@
         let appData = {
             tasks: [],
             weeklyPlans: [],
-            completedTasks: []
+            completedTasks: [],
+        lastUpdated: null
         };
 
         // Selected options
@@ -548,7 +549,7 @@
             if (user) {
                 userId = user.id;
                 console.log('User is logged in:', user);
-                loadFromCloud(); // Try to load from cloud when initialized
+                manualSync(); // Try to load from cloud when initialized
             } else {
                 userId = null;
                 console.log('User is not logged in');
@@ -559,7 +560,7 @@
         identity.on('login', user => {
             userId = user.id;
             console.log('User logged in:', user);
-            loadFromCloud(); // Load from cloud after login
+            manualSync(); // Load from cloud after login
         });
 
         identity.on('logout', () => {
@@ -585,7 +586,8 @@
 
         // Save data to localStorage and cloud
         function saveData() {
-            localStorage.setItem('weeklyPlannerData', JSON.stringify(appData));
+                appData.lastUpdated = new Date().toISOString();
+    localStorage.setItem('weeklyPlannerData', JSON.stringify(appData));
             updateStats();
             // Save to cloud if logged in
             if (userId) {
@@ -936,6 +938,8 @@
 
         // Initialize app when page loads
         window.onload = loadData;
+            identity.init();
+        
     </script>
 </body>
 </html>
@@ -954,3 +958,4 @@
 .category-btn.active.futurelife { background: #9932CC; } /* DarkOrchid */
 .category-btn.active.misc { background: #808080; } /* Gray */
 </style>
+
