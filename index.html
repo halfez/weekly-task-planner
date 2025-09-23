@@ -1,10 +1,10 @@
-e<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weekly Task Planner</title>
-    <script type='text/javascript' src='https://private-us-east-1.manuscdn.com/W8OO4gKqDnAEj1e6Pbfgzw51ixqcXUa0-vp9GWV6Z91M3oyGRrm_3kSiImpWTm6Xy_yz3p5Ryijb5IDQsPWT4rlzAUTAtzHBPnr-40aWSaQtQSnyqVA5Lkzdm3Den-krzsLAKWq8pBS3HE3dAz-I6N_Of3WIwbXFz6jheS8AvvQ='></script><script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script type='text/javascript' src='https://private-us-east-1.manuscdn.com/Z8A7ORMIR3euSKasprdKMBkoyzILuo05UOcvalQTCcVspa0MQZM_oCwV7YFXv7nmrMzuvjr4Wkwj8vNLoBd_A7-TKQ8bv3cT7Nqq0yDBBWyDqa7zifgXAig8ttQNgNiWcs1F0gR_HO7Lo1tHx1VCW5jjk_FsmUoGVfH-C9u9ApQ='></script><script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <style>
         * {
             margin: 0;
@@ -472,8 +472,8 @@ e<!DOCTYPE html>
 
             <div class="button-group">
                 <button class="toggle-btn priority-btn high" data-priority="high" onclick="selectPriority('high')">High Priority</button>
-                <button class="toggle-btn priority-btn medium" data-priority="medium" onclick="selectPriority("medium")">Medium Priority</button>
-                <button class="toggle-btn priority-btn low active" data-priority="low" onclick="selectPriority("low")">Low Priority</button>
+                <button class="toggle-btn priority-btn medium" data-priority="medium" onclick="selectPriority('medium')">Medium Priority</button>
+                <button class="toggle-btn priority-btn low active" data-priority="low" onclick="selectPriority('low')">Low Priority</button>
             </div>
 
             <button class="add-task-btn" onclick="addNewTask()">Add Task(s)</button>
@@ -533,8 +533,7 @@ e<!DOCTYPE html>
         let appData = {
             tasks: [],
             weeklyPlans: [],
-            completedTasks: [],
-        lastUpdated: null
+            completedTasks: []
         };
 
         // Selected options
@@ -549,7 +548,7 @@ e<!DOCTYPE html>
             if (user) {
                 userId = user.id;
                 console.log('User is logged in:', user);
-                manualSync(); // Try to load from cloud when initialized
+                loadFromCloud(); // Try to load from cloud when initialized
             } else {
                 userId = null;
                 console.log('User is not logged in');
@@ -560,7 +559,7 @@ e<!DOCTYPE html>
         identity.on('login', user => {
             userId = user.id;
             console.log('User logged in:', user);
-            manualSync(); // Load from cloud after login
+            loadFromCloud(); // Load from cloud after login
         });
 
         identity.on('logout', () => {
@@ -586,8 +585,7 @@ e<!DOCTYPE html>
 
         // Save data to localStorage and cloud
         function saveData() {
-                appData.lastUpdated = new Date().toISOString();
-    localStorage.setItem('weeklyPlannerData', JSON.stringify(appData));
+            localStorage.setItem('weeklyPlannerData', JSON.stringify(appData));
             updateStats();
             // Save to cloud if logged in
             if (userId) {
@@ -938,8 +936,6 @@ e<!DOCTYPE html>
 
         // Initialize app when page loads
         window.onload = loadData;
-            identity.init();
-        
     </script>
 </body>
 </html>
